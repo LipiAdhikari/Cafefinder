@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Cafe Finder — Find the right cafe for what you need</title>
+    <meta name="theme-color" content="#382417" />
+    <meta name="description" content="Find the right cafe for what you need to do right now. Community ratings, live busyness check-ins, and purpose search." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <!-- Google Fonts: Plus Jakarta Sans with system fallback -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true">☕</span>
+          <div class="brand-text">
+            <h1>Cafe Finder</h1>
+            <p>Find the right cafe for what you need to do right now.</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button type="button" id="btn-near-me" class="btn-header" aria-label="Find cafes near my current location">
+            <span aria-hidden="true">📍</span> Near me
+          </button>
+          <button type="button" id="btn-preferences" class="btn-header" aria-label="Set my cafe match preferences">
+            <span aria-hidden="true">⚙️</span> Preferences
+          </button>
+          <button type="button" id="btn-auth" class="btn-header" aria-label="Sign in or view profile">
+            <span aria-hidden="true">👤</span> <span id="header-auth-label">Sign in</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- Full screen map container -->
+      <div id="map" class="map-container" aria-label="Interactive map of cafes"></div>
+
+      <!-- Draggable bottom sheet on mobile / Sidebar list on desktop -->
+      <aside id="sidebar" class="sidebar-sheet" aria-label="Cafe list and filters">
+        <div class="sheet-drag-handle" id="list-sheet-handle" role="button" tabindex="0" aria-label="Drag or tap to resize cafe list">
+          <div class="sheet-handle-pill"></div>
+          <div class="sheet-peek-bar">
+            <span class="sheet-peek-title">☕ Cafes nearby</span>
+            <span id="sheet-count" class="badge">Loading…</span>
+          </div>
+        </div>
+
+        <div class="sheet-content">
+          <!-- Purpose Chips Toolbar -->
+          <div class="purpose-bar-wrapper">
+            <div class="purpose-label">I'm looking for a spot to:</div>
+            <div class="purpose-chips" id="purpose-chips" role="toolbar" aria-label="Filter by purpose">
+              <button type="button" class="purpose-chip" data-purpose="study">📚 Study</button>
+              <button type="button" class="purpose-chip" data-purpose="work">💻 Work</button>
+              <button type="button" class="purpose-chip" data-purpose="date">🕯️ Date</button>
+              <button type="button" class="purpose-chip" data-purpose="group">👥 Group</button>
+              <button type="button" class="purpose-chip" data-purpose="outdoor">🌿 Outdoor</button>
+            </div>
+          </div>
+
+          <!-- Search & Quick Toggles -->
+          <div class="search-section">
+            <div class="search-input-wrapper">
+              <span class="search-icon" aria-hidden="true">🔍</span>
+              <input
+                type="search"
+                id="search-input"
+                placeholder="Search cafes by name…"
+                aria-label="Search cafes by name"
+                autocomplete="off"
+              />
+              <button type="button" id="btn-clear-search" class="btn-clear-search" aria-label="Clear search" style="display:none">✕</button>
+            </div>
+
+            <div class="quick-toggles-row">
+              <button type="button" id="btn-filter-saved" class="quick-pill-btn" aria-pressed="false">
+                <span aria-hidden="true">❤️</span> Saved (<span id="saved-count">0</span>)
+              </button>
+              <button type="button" id="btn-filter-opennow" class="quick-pill-btn" aria-pressed="false">
+                <span aria-hidden="true">🕒</span> Open now
+              </button>
+              <button type="button" id="btn-toggle-filters" class="quick-pill-btn" aria-expanded="false">
+                <span aria-hidden="true">⚙️</span> Filters <span id="active-filters-count" class="filter-count-badge" style="display:none">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Expandable Filters Section -->
+          <section id="filters" class="filters-panel" aria-label="Filter and sort cafes" style="display:none">
+            <div class="filter-grid">
+              <div class="filter-group">
+                <label for="sort-select">Sort by</label>
+                <select id="sort-select">
+                  <option value="distance">Nearest first</option>
+                  <option value="rating">Top rated ★</option>
+                  <option value="match">Best Match % ✨</option>
+                  <option value="quiet">Quietest right now 🟢</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="radius-select">Search radius</label>
+                <select id="radius-select">
+                  <option value="1000">1 km</option>
+                  <option value="2500" selected>2.5 km</option>
+                  <option value="5000">5 km</option>
+                  <option value="10000">10 km</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filter-tag">Vibe / Tag</label>
+                <select id="filter-tag">
+                  <option value="">Any vibe</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filter-wifi">Min Wi-Fi</label>
+                <select id="filter-wifi">
+                  <option value="0">Any</option>
+                  <option value="3">3+ ★</option>
+                  <option value="4">4+ ★</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="filter-quiet">Min quiet</label>
+                <select id="filter-quiet">
+                  <option value="0">Any</option>
+                  <option value="3">3+ ★</option>
+                  <option value="4">4+ ★</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <!-- Cafe list section -->
+          <section id="list" aria-label="Cafes list" role="feed"></section>
+        </div>
+      </aside>
+
+      <!-- Detail bottom sheet on mobile / side panel on desktop (replaces <dialog>) -->
+      <div id="detail-backdrop" class="detail-backdrop" aria-hidden="true"></div>
+      <section id="detail-panel" class="detail-panel" aria-hidden="true" role="region" aria-label="Cafe details">
+        <div class="sheet-drag-handle" id="detail-sheet-handle" role="button" tabindex="0" aria-label="Drag down to close details">
+          <div class="sheet-handle-pill"></div>
+        </div>
+        <div class="detail-panel-header">
+          <button type="button" class="btn-back" id="detail-back-btn" aria-label="Back to cafe list">
+            <span aria-hidden="true">←</span> Back to list
+          </button>
+          <div class="detail-panel-actions">
+            <button type="button" class="btn-icon" id="detail-fav-btn" aria-label="Save this cafe">
+              <span class="fav-icon" aria-hidden="true">🤍</span>
+            </button>
+            <button type="button" class="btn-icon" id="detail-share-btn" aria-label="Share this cafe">
+              <span aria-hidden="true">🔗</span>
+            </button>
+            <button type="button" class="btn-close" id="detail-close-btn" aria-label="Close detail panel">✕</button>
+          </div>
+        </div>
+        <div class="detail-panel-body" id="detail-content"></div>
+      </section>
+
+      <!-- User Preferences Modal -->
+      <div id="preferences-modal" class="modal-backdrop" aria-hidden="true" style="display:none">
+        <div class="modal-card" role="dialog" aria-labelledby="pref-modal-title" aria-modal="true">
+          <div class="modal-header">
+            <h3 id="pref-modal-title">⚙️ My Cafe Preferences</h3>
+            <button type="button" class="btn-close" id="btn-close-prefs" aria-label="Close preferences">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="meta">What matters most to you? We use this to calculate a personalized <b>Match %</b> for every cafe.</p>
+            <div id="pref-dimensions-list" class="pref-dimensions-list">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="secondary" id="btn-reset-prefs">Reset defaults</button>
+            <button type="button" id="btn-save-prefs">Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authentication Modal (Sign in / Register) -->
+      <div id="auth-modal" class="modal-backdrop" aria-hidden="true" style="display:none">
+        <div class="modal-card auth-modal-card" role="dialog" aria-labelledby="auth-modal-title" aria-modal="true">
+          <div class="modal-header">
+            <h3 id="auth-modal-title">☕ Cafe Finder Account</h3>
+            <button type="button" class="btn-close" id="btn-close-auth" aria-label="Close account dialog">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="auth-tabs" role="tablist">
+              <button type="button" id="tab-login" class="auth-tab active" role="tab" aria-selected="true">Sign In</button>
+              <button type="button" id="tab-register" class="auth-tab" role="tab" aria-selected="false">Create Account</button>
+            </div>
+
+            <form id="auth-form" class="auth-form">
+              <div id="auth-name-group" class="form-group" style="display:none">
+                <label for="auth-name">Your Name</label>
+                <input type="text" id="auth-name" name="name" placeholder="e.g. Alex" autocomplete="name" />
+              </div>
+
+              <div class="form-group">
+                <label for="auth-email">Email Address</label>
+                <input type="email" id="auth-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+              </div>
+
+              <div class="form-group">
+                <label for="auth-password">Password</label>
+                <input type="password" id="auth-password" name="password" placeholder="At least 6 characters" required autocomplete="current-password" minlength="6" />
+              </div>
+
+              <div id="auth-error-msg" class="auth-error" style="display:none"></div>
+
+              <div class="form-actions" style="margin-top:16px">
+                <button type="submit" id="btn-auth-submit">Sign In</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Modal (Shows their reviews, edit & delete) -->
+      <div id="profile-modal" class="modal-backdrop" aria-hidden="true" style="display:none">
+        <div class="modal-card profile-modal-card" role="dialog" aria-labelledby="profile-modal-title" aria-modal="true">
+          <div class="modal-header">
+            <h3 id="profile-modal-title">👤 My Profile</h3>
+            <button type="button" class="btn-close" id="btn-close-profile" aria-label="Close profile">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="profile-user-summary">
+              <div class="profile-avatar">☕</div>
+              <div class="profile-details">
+                <h4 id="profile-name">User Name</h4>
+                <p id="profile-email" class="meta">email@example.com</p>
+              </div>
+              <button type="button" id="btn-signout" class="secondary btn-signout" aria-label="Sign out">Sign Out</button>
+            </div>
+
+            <div class="profile-reviews-section">
+              <h4>My Cafe Reviews (<span id="profile-reviews-count">0</span>)</h4>
+              <p class="meta" style="margin-top:0">Reviews tied to your account are editable anytime:</p>
+              <div id="profile-reviews-list" class="profile-reviews-list">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast notifications container -->
+      <div id="toast" class="toast" role="status" aria-live="polite" style="display:none"></div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

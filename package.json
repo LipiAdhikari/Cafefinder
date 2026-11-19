@@ -1,0 +1,15 @@
+{
+  "name": "cafe-finder",
+  "version": "0.1.0",
+  "description": "Simple, extensible cafe finder with community ratings",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "migrate": "node server/scripts/migrate.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.23.1"
+  }
+}

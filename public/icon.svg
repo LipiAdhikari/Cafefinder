@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C85A32"/>
+      <stop offset="100%" stop-color="#382417"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#grad)"/>
+  <!-- Coffee Cup Icon -->
+  <path d="M120 180h220v140c0 44.18-35.82 80-80 80h-60c-44.18 0-80-35.82-80-80V180z" fill="#FAF6F0"/>
+  <!-- Handle -->
+  <path d="M340 210h30c27.61 0 50 22.39 50 50s-22.39 50-50 50h-30v-24h30c14.36 0 26-11.64 26-26s-11.64-26-26-26h-30v-24z" fill="#FAF6F0"/>
+  <!-- Steam Curves -->
+  <path d="M170 145c-10-18 10-30 0-48M230 145c-10-18 10-30 0-48M290 145c-10-18 10-30 0-48" stroke="#FAF6F0" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <!-- Saucer -->
+  <rect x="90" y="420" width="280" height="24" rx="12" fill="#FAF6F0" opacity="0.9"/>
+</svg>
